@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 __author__ = 'Chris Potts'
-__modifiedby__ = 'Bhagirath Mehta and Suvir Mirchandani'
+__modifiedby__ = 'Bhagirath Mehta + Suvir Mirchandani'
 
 class RSA:
     """Implementation of the core Rational Speech Acts model.
