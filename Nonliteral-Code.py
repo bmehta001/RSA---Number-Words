@@ -1,11 +1,3 @@
-
-# S = [30, 32, 1000000]
-# A = [0,1]
-# G = ['s','a','sa']
-# priorAffects = [[0,1],[0,0],[0,0]]
-# sa = list(itertools.product(s,a))
-# print(sa)
-
 # roundCost = 1
 # sharpCost = 0
 # digitsOfPrecision = 1
@@ -64,8 +56,19 @@ class NonliteralNumbersRSA:
         self.sharp_cost = sharp_cost
         self.precision = precision # Round numbers would be to the nearest 10^precision
     
-    def listeral_listener(self):
-        # TODO: Should display table of L_0 for all s,a
+    def rownorm(mat):
+    """Row normalization of np.array or pd.DataFrame"""
+        return (mat.T / mat.sum(axis=1)).T
+
+    def chiracDelta(goal, vals):
+        return [1 if goal == x else 0 for x in column]
+    
+    def safelog(vals):
+        """Silence distracting warnings about log(0)."""
+        with np.errstate(divide='ignore'):
+            return np.log(vals)    
+        def listeral_listener(self):
+            # TODO: Should display table of L_0 for all s,a
         pass
     
     def speaker(self):
@@ -104,17 +107,28 @@ class NonliteralNumbersRSA:
                 prob += self.L_0(s_p, a_p, u)
         return prob
     
-    def S_1(self, u, s, a, g):
+    def S_1(self, u, s, a, g, columns):
         # TODO: This should implement equation [8], making sure to normalize over
         # all s,a,g since it's a conditional probability
+        lit = self.literal_listener()
+        chi = chiracDelta(g, columns)
+        utilities = np.exp(self.costs)
+        litUtil = [lit*utilities for lit, utilities in zip(lit, utilities)].T
+        final = [chi*lit for chi, lit in zip(chi, lit)]
+        return rownorm(final)        
         pass
     
-    def L_1(self, s, a, u):
+    def L_1(self, s, a, u, priorSA, priorG,columns):
         # TODO: This should implement equation [10], making sure to normalize over
         # all u since it's a conditional probability.
         # To iterate over goal functions, use 
         # for g in self.goals().  (each g will be a function)
-    
+        priorSAG = priorS*priorG[0] + priorA*priorG[1] + priorSA*priorG[2]
+        speak = S_1(self,u,s,a,g,columns)
+        final = [priorSAG*speak for priorSAG, speak in zip(priorSAG,speak)]
+        np.matmul(priorG,S_1(self,u,s,a,g,columns))
+                
+    ## must incorporate next 3 functions
     def goals(self):
         return [lambda s, a: r(f(s), a) for f in generate_f for r in generate_r]
 
@@ -127,3 +141,52 @@ class NonliteralNumbersRSA:
                 lambda s, a: a,
                 lambda s, a: s,a]
                 
+        
+  if __name__ == '__main__':
+    """Examples from the class handout."""
+
+    from IPython.display import display
+
+
+    def display_reference_game(mod):
+        d = mod.lexicon.copy()
+        d['costs'] = mod.costs
+        d.loc['prior'] = list(mod.prior) + [""]
+        d.loc['alpha'] = [mod.alpha] + [" "] * mod.lexicon.shape[1]
+        display(d)
+
+
+    # Core lexicon:
+
+    msgs = s
+    s = [30, 32, 1000000]
+    a = [0,1]    
+    sa = list(zip(s)) + list(zip(a)) + list(itertools.product(s,a)) #each of the possible goals: s,a,s/a
+    priorSA = [[1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33], 
+               [1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33],
+               [1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33, 1/33]]
+    priorS = [sum(x) for x in priorSA]
+    priorA = [sum(x) for x in priorSA.T]
+    priorG = [1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11, 1/11]
+    lex = pd.DataFrame(
+[[1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1,1,1,1]], index=msgs, columns=sa) #Edit this function
+
+    print("="*70 + "\nEven priors and all-0 message costs\n")
+    basic_mod = RSA(lexicon=lex, prior=[1/6, 1/6, 1/6, 1/6, 1/6, 1/6], costs=[0.0, 0.0]) #Edit this function
+
+    display_reference_game(basic_mod)
+
+    print("\nLiteral listener")
+    display(basic_mod.literal_listener())
+
+    print("\nPragmatic speaker")
+    display(basic_mod.speaker())
+
+    print("\nPragmatic listener")
+    display(basic_mod.listener())
+
+
+    print("="*70 + "\nEven priors, imbalanced message costs\n")
+    cost_most = RSA(lexicon=lex, prior=[0.5, 0.5], costs=[-6.0, 0.0])
+
+    display_reference_game(cost_most)
