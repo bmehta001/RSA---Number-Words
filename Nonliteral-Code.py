@@ -1,8 +1,3 @@
-# Note: this code is a work in progress.  It needs to be cleaned up, but at this point,
-# we believe it accurately reproduces the model of Kao et al. and generalizes it a bit.
-# We will test this more thoroughly.  We also hope to create some sort of visual
-# of the output to put in the paper.
-
 import itertools
 import math
 from IPython.display import display
