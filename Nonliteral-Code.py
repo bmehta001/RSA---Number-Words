@@ -1,10 +1,16 @@
+# Note: this code is a work in progress.  It needs to be cleaned up, but at this point,
+# we believe it accurately reproduces the model of Kao et al. and generalizes it a bit.
+# We will test this more thoroughly.  We also hope to create some sort of visual
+# of the output to put in the paper.
+
 import itertools
 import math
 
 class NonliteralNumbersRSA:
     
     # TODO: Explain parameters
-    def __init__(self, lexicon, states, affects, s_prior, sa_prior, round_cost, sharp_cost, precision):
+    def __init__(self, lexicon, states, affects, s_prior, sa_prior, round_cost, sharp_cost,
+        precision):
         assert lexicon == states, "lexicon (U) must be equal to states (S)"
         self.lexicon = lexicon
         self.states = states
@@ -15,18 +21,9 @@ class NonliteralNumbersRSA:
         self.round_cost = round_cost
         self.sharp_cost = sharp_cost
         self.precision = precision # Round numbers would be to the nearest 10^precision
-    
-    # def rownorm(mat):
-    #     """Row normalization of np.array or pd.DataFrame"""
-    #     return (mat.T / mat.sum(axis=1)).T
-    
-    # def safelog(vals):
-    #     """Silence distracting warnings about log(0)."""
-    #     with np.errstate(divide='ignore'):
-    #         return np.log(vals)    
 
     def literal_listener(self):
-        # TODO: Should display table of L_0 for all u,s,a
+        # Table of L_0 for all u,s,a
         literal = [[[0 for a in self.affects] for s in self.states] for u in self.lexicon]
 
         for i, u in enumerate(self.lexicon):
@@ -36,20 +33,21 @@ class NonliteralNumbersRSA:
         return literal
     
     def speaker(self):
-        # TODO: Should display table of S_1 for all s,a,g,u
-        # This will be a lot of output, so we could do this by maybe having
-        # optional parameters to this function to narrow the output.
-        speaker = [[[[0 for u in self.lexicon] for g in self.goals()] for a in self.affects] for s in self.states]
+        # Table of S_1 for all g,s,a,u
+        speaker = [[[[0 for u in self.lexicon] for a in self.affects] for s in self.states]
+            for g in self.goals()]
 
-        for i, s in enumerate(self.states):
-            for j, a in enumerate(self.affects):
-                for k, g in enumerate(self.goals()):
+        for i, g in enumerate(self.goals()):
+            for j, s in enumerate(self.states):
+                for k, a in enumerate(self.affects):
                     for l, u in enumerate(self.lexicon):
+                        # if s == 30 and a == 0 and u == 32:
+                        #     import pdb; pdb.set_trace() 
                         speaker[i][j][k][l] = self.S_1(u, s, a, g)
         return speaker
     
     def listener(self):
-        # TODO: Should display table of L_1 for all u, s, a
+        # Table of L_1 for all u, s, a
         listener = [[[0 for a in self.affects] for s in self.states] for u in self.lexicon]
         
         for i, u in enumerate(self.lexicon):
@@ -83,16 +81,8 @@ class NonliteralNumbersRSA:
             if x == g(s_p, a_p):
                 prob += self.L_0(s_p, a_p, u)
         return prob
-    
+
     def S_1(self, u, s, a, g):
-        # TODO: This should implement equation [8], making sure to normalize over
-        # all s,a,g since it's a conditional probability
-        # lit = self.literal_listener()
-        # chi = dirac_delta(g, columns)
-        # utilities = np.exp(self.costs)
-        # litUtil = [lit*utilities for lit, utilities in zip(lit, utilities)].T
-        # final = [chi*lit for chi, lit in zip(chi, lit)]
-        # return rownorm(final)
         numerator = self.S_1_helper(u, s, a, g)
         denominator = sum([self.S_1_helper(u_p, s, a, g) for u_p in self.lexicon])
         return numerator / denominator
@@ -105,16 +95,9 @@ class NonliteralNumbersRSA:
         return total
 
     def L_1(self, s, a, u):
-        # TODO: This should implement equation [10], making sure to normalize over
-        # all u since it's a conditional probability.
-        # To iterate over goal functions, use 
-        # for g in self.goals().  (each g will be a function)
-        # priorSAG = priorS*priorG[0] + priorA*priorG[1] + priorSA*priorG[2]
-        # speak = S_1(self,u,s,a,g,columns)
-        # final = [priorSAG*speak for priorSAG, speak in zip(priorSAG,speak)]
-        # np.matmul(priorG,S_1(self,u,s,a,g,columns))
         numerator = self.L_1_helper(s, a, u)
-        denominator = sum([self.L_1_helper(s_p, a_p, u) for s_p in self.states for a_p in self.affects])
+        denominator = sum([self.L_1_helper(s_p, a_p, u) for s_p in self.states for a_p in
+            self.affects])
         return numerator / denominator
 
     def L_1_helper(self, s, a, u):
@@ -127,15 +110,16 @@ class NonliteralNumbersRSA:
         return 1. / len(self.goals())
 
     def goals(self):
-        return [lambda s, a: r(f(s), a) for f in self.generate_f() for r in self.generate_r()]
+        return [lambda s, a, r=r, f=f: r(f(s), a) for r in self.generate_r() for f in
+            self.generate_f()]
 
     def generate_f(self):
         return [lambda s: s,
                 lambda s: self.Round(s)]
     
     def generate_r(self):
-        return [lambda s, a: s,
-                lambda s, a: a,
+        return [lambda s, a: (s,),
+                lambda s, a: (a,),
                 lambda s, a: (s,a)]
                 
         
@@ -157,10 +141,11 @@ if __name__ == '__main__':
 
     S = U = [30, 32, 1000000]
     A = [0, 1]
-    s_prior = [0.45, 0.45, 0.1]
+    s_prior = [0.55, 0.44, 0.01]
     sa_prior = [ [0.9, 0.1],
                  [0.9, 0.1], 
                  [0.1, 0.9] ]
+
     rsa = NonliteralNumbersRSA(lexicon=U, states=S, affects=A, s_prior=s_prior,
                                sa_prior=sa_prior, round_cost=1, sharp_cost=3, precision=1)
 
@@ -173,6 +158,19 @@ if __name__ == '__main__':
             for a, for_sa_given_u in enumerate(for_s_given_u):
                 print "\t\taffect:", rsa.affects[a]
                 print "\t\t\tP(s,a|u):", for_sa_given_u
+
+    speaker = rsa.speaker()
+
+    goals = ["r_{}(f_{}(s),a)".format(r,f) for r in ['s','a','sa'] for f in ['e','a']]
+    for g, given_g in enumerate(speaker):
+        print "goal", goals[g]
+        for s, given_sg in enumerate(given_g):
+            print "\tstate:", rsa.states[s]
+            for a, given_sag in enumerate(given_sg):
+                print "\t\taffect:", rsa.affects[a]
+                for u, for_u_given_sag in enumerate(given_sag):
+                    print "\t\t\tutterance:", rsa.lexicon[u]
+                    print "\t\t\t\tP(u|s,a,g)", for_u_given_sag
 
     listener = rsa.listener()
 
