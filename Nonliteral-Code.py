@@ -167,8 +167,7 @@ class NonliteralNumbersRSA:
                 lambda s, a: (a,),
                 lambda s, a: (s,a)]
                 
-    def display_literal_listener(self):
-        lit = literal_listener
+    def display_literal_listener(self, lit):
         for u, given_u in enumerate(lit):
             lex = pd.DataFrame(given_u, index = self.states, columns = self.affects)
             d = lex.copy()
@@ -177,9 +176,8 @@ class NonliteralNumbersRSA:
             d.loc['utterance'] = [self.lexicon[u]] + [" "]
             display(d)
             
-    def display_speaker(self):
+    def display_speaker(self, speak):
         goals = ["r_{}(f_{}(s),a)".format(r,f) for r in ['s','a','sa'] for f in ['e','a']]
-        speak = speaker
         for g, given_g in enumerate(speak):
             for s, given_sg in enumerate(given_g):
                 lex = pd.DataFrame(given_sg, index = self.affects, columns = self.lexicon)
@@ -188,8 +186,7 @@ class NonliteralNumbersRSA:
                 d.loc['state:'] = [rsa.states[s]] + [" "] + [" "]
                 display(d)
                 
-    def display_listener(self):
-        list = listener
+    def display_listener(self, list):
         for u, given_u in enumerate(list):
             lex = pd.DataFrame(given_u, index = self.states, columns = self.affects)
             d = lex.copy()
@@ -213,14 +210,12 @@ if __name__ == '__main__':
     rsa = NonliteralNumbersRSA(lexicon=U, states=S, affects=A, s_prior=s_prior,
                                sa_prior=sa_prior, round_cost=1, sharp_cost=3, precision=1)
 
-    
-    literal_listener = rsa.literal_listener()
-    
+        
     print("LITERAL LISTENER: ")
-    rsa.display_literal_listener()
+    rsa.display_literal_listener(rsa.literal_listener())
     
     print("SPEAKER: ")
-    rsa.display_speaker()
+    rsa.display_speaker(rsa.speaker())
 
     print("LISTENER: ")
-    rsa.display_listener()
+    rsa.display_listener(rsa.listener())
