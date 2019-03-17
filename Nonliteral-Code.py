@@ -68,8 +68,6 @@ class NonliteralNumbersRSA:
             for j, s in enumerate(self.states):
                 for k, a in enumerate(self.affects):
                     for l, u in enumerate(self.lexicon):
-                        # if s == 30 and a == 0 and u == 32:
-                        #     import pdb; pdb.set_trace() 
                         speaker[i][j][k][l] = self.S_1(u, s, a, g)
         return speaker
     
@@ -169,55 +167,62 @@ class NonliteralNumbersRSA:
                 lambda s, a: (a,),
                 lambda s, a: (s,a)]
                 
-    def display_literal_listener(self, lit):
+    def display_literal_listener(self, lit, visual):
         sns.set()
         for u, given_u in enumerate(lit):
             lex = pd.DataFrame(index = self.states, columns = self.affects, data = given_u)
-            #lex.pivot(index = 'row', columns = 'col', values = 'prob')
             d = lex.copy()
-            #d['costs'] = mod.costs
-            #d.loc['prior'] = list(mod.prior) + [""]
-            f, ax = plt.subplots(figsize = (4,6))
-            fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1)
-            plt.xlabel("Affects")
-            plt.ylabel("States")
-            plt.title("Literal Listener - Utterance: " + str(self.lexicon[u]))
-            plt.show(fig)
-            #d.loc['utterance'] = [self.lexicon[u]] + [" "]
-            #display(d)
+            if visual:
+                f, ax = plt.subplots(figsize = (5,5))
+                fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1, linewidths=2, cmap="Blues")
+                plt.xlabel("Affects")
+                plt.ylabel("States")
+                plt.title("Literal Listener - Utterance: " + str(self.lexicon[u]))
+                plt.show(fig)
+            else:
+                d.loc['utterance'] = [self.lexicon[u]] + [" "]
+                display(d)
+                print
+
             
-    def display_speaker(self, speak):
+    def display_speaker(self, speak, visual):
         sns.set()
+        sns.set_palette("Greens")
         goals = ["r_{}(f_{}(s),a)".format(r,f) for r in ['s','a','sa'] for f in ['e','a']]
         for g, given_g in enumerate(speak):
             for s, given_sg in enumerate(given_g):
                 lex = pd.DataFrame(index = self.affects, columns = self.lexicon, data = given_sg)
                 d = lex.copy()
-                f, ax = plt.subplots(figsize = (6,4))
-                fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1)
-                plt.xlabel("Utterances")
-                plt.ylabel("Affects")
-                plt.title("Pragmatic Speaker - Goal: " + str([goals[g]]) + ", State: " + str(rsa.states[s]))
-                plt.show(fig)
-                #d.loc['goal'] = [goals[g]] + [" "] + [" "]
-                #d.loc['state:'] = [rsa.states[s]] + [" "] + [" "]
-                #display(d)
+                if visual:
+                    f, ax = plt.subplots(figsize = (5,5))
+                    fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1, linewidths=2, cmap="Reds")
+                    plt.xlabel("Utterances")
+                    plt.ylabel("Affects")
+                    plt.title("Pragmatic Speaker - Goal: " + str([goals[g]]) + ", State: " + str(rsa.states[s]))
+                    plt.show(fig)
+                else:
+                    d.loc['goal'] = [goals[g]] + [" "] * 2
+                    d.loc['state:'] = [rsa.states[s]] + [" "] * 2
+                    display(d)
+                    print
                 
-    def display_listener(self, list):
+    def display_listener(self, list, visual):
         sns.set()
+        sns.set_palette("Blues")
         for u, given_u in enumerate(list):
             lex = pd.DataFrame(index = self.states, columns = self.affects, data = given_u)
             d = lex.copy()
-            #d['costs'] = mod.costs
-            #d.loc['prior'] = list(mod.prior) + [""]
-            f, ax = plt.subplots(figsize = (6,4))
-            fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1)
-            plt.xlabel("Affects")
-            plt.ylabel("States")
-            plt.title("Pragmatic Listener - Utterance: " + str(self.lexicon[u]))
-            plt.show(fig)
-            #d.loc['utterance'] = [int(self.lexicon[u])] + [" "]
-            #display(d)
+            if visual:
+                f, ax = plt.subplots(figsize = (5,5))
+                fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1, linewidths=2, cmap="Purples")
+                plt.xlabel("Affects")
+                plt.ylabel("States")
+                plt.title("Pragmatic Listener - Utterance: " + str(self.lexicon[u]))
+                plt.show(fig)
+            else:
+                d.loc['utterance'] = [int(self.lexicon[u])] + [" "]
+                display(d)
+                print
         
 # states, affects, priors and other values can be modified while running the RSA class        
 if __name__ == '__main__':
@@ -235,11 +240,11 @@ if __name__ == '__main__':
                                sa_prior=sa_prior, round_cost=1, sharp_cost=3, precision=1)
 
         
-    print("LITERAL LISTENER: ")
-    rsa.display_literal_listener(rsa.literal_listener())
+    print("="*70 + "\nLiteral Listener: ")
+    rsa.display_literal_listener(rsa.literal_listener(), visual=True)
     
-    print("SPEAKER: ")
-    rsa.display_speaker(rsa.speaker())
+    print("="*70 + "\nPragmatic Speaker: ")
+    rsa.display_speaker(rsa.speaker(), visual=True)
 
-    print("LISTENER: ")
-    rsa.display_listener(rsa.listener())
+    print("="*70 + "\nPragmatic Listener: ")
+    rsa.display_listener(rsa.listener(), visual=True)
