@@ -169,20 +169,25 @@ class NonliteralNumbersRSA:
                 
     def display_literal_listener(self, lit, visual):
         sns.set()
+        f, axes = plt.subplots(1, len(lit), figsize=(15,5))
+        f.suptitle('Literal Listener', fontsize=16)
+        f.subplots_adjust(wspace=0.5, top=0.85, bottom=0.15)
+        cbar_ax = f.add_axes([.93, .15, .03, .7])
+
         for u, given_u in enumerate(lit):
             lex = pd.DataFrame(index = self.states, columns = self.affects, data = given_u)
             d = lex.copy()
             if visual:
-                f, ax = plt.subplots(figsize = (5,5))
-                fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = ax, vmin=0, vmax=1, linewidths=2, cmap="Blues")
-                plt.xlabel("Affects")
-                plt.ylabel("States")
-                plt.title("Literal Listener - Utterance: " + str(self.lexicon[u]))
-                plt.show(fig)
+                fig = sns.heatmap(d, annot=True, fmt = '.2g', ax = axes[u], vmin=0, vmax=1, linewidths=2, cmap="Blues", cbar=(u == len(lit) -1), cbar_ax=cbar_ax if (u == len(lit) - 1) else None)
+                fig.set_xlabel("Affects")
+                fig.set_ylabel("States")
+                fig.set_title("Utterance: " + str(self.lexicon[u]))
             else:
                 d.loc['utterance'] = [self.lexicon[u]] + [" "]
                 display(d)
                 print
+        if visual:
+            plt.show()
 
             
     def display_speaker(self, speak, visual):
@@ -244,7 +249,7 @@ if __name__ == '__main__':
     rsa.display_literal_listener(rsa.literal_listener(), visual=True)
     
     print("="*70 + "\nPragmatic Speaker: ")
-    rsa.display_speaker(rsa.speaker(), visual=True)
+    rsa.display_speaker(rsa.speaker(), visual=False)
 
     print("="*70 + "\nPragmatic Listener: ")
-    rsa.display_listener(rsa.listener(), visual=True)
+    rsa.display_listener(rsa.listener(), visual=False)
